@@ -6,7 +6,7 @@ void setup() {
   Serial.begin(115200);
 
   delay(1000);
-  while(!Sensor.begin()){
+  while(!Sensor.begin()) {
     Serial.println("Sensor init err!!!");
     delay(1000);
   }
@@ -17,7 +17,7 @@ void setup() {
   Serial.print("Version:\t");
   Serial.println(Sensor.getFirmwareVersion());
   //Set the rain accumulated value, unit: mm
-  //Sensor.setRainAccumulatedValue(0.2794);
+  Sensor.setRainAccumulatedValue(0.2794);
 }
 
 void loop() {
