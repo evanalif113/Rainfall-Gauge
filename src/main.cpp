@@ -17,7 +17,7 @@ void setup() {
   Serial.print("Version:\t");
   Serial.println(Sensor.getFirmwareVersion());
   //Set the rain accumulated value, unit: mm
-  Sensor.setRainAccumulatedValue(0.02794);
+  Sensor.setRainAccumulatedValue(0.2794);
 }
 
 void loop() {
