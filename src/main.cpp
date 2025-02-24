@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 #include <Wire.h>
+#include <ElegantOTA.h>
 #include <ArduinoJson.h>
 #include "DFRobot_RainfallSensor.h"
 
@@ -23,7 +24,7 @@ float oneHourRainfall = 0;
 int rawData = 0;
 void updateSensorData() {
   // Update data sensor curah hujan setiap detik
-  sensorWorkingTime = Sensor.getSensorWorkingTime();
+  sensorWorkingTime = Sensor.getSensorWorkingTime() * 60;
   totalRainfall = Sensor.getRainfall();            // Total curah hujan (mm)
   oneHourRainfall = Sensor.getRainfall(1);           // Curah hujan selama 1 jam (mm)
   rawData = Sensor.getRawData();                     // Jumlah tipping bucket
@@ -31,7 +32,7 @@ void updateSensorData() {
   // Tampilkan data ke Serial Monitor untuk debugging
   Serial.print("Sensor WorkingTime: ");
   Serial.print(sensorWorkingTime);
-  Serial.println(" H");
+  Serial.println(" Minute");
   Serial.print("Total Rainfall: ");
   Serial.print(totalRainfall);
   Serial.println(" mm");
@@ -113,6 +114,7 @@ void setup() {
   // Konfigurasi endpoint web server
   server.on("/", handleRoot);
   server.on("/data", handleData);
+  ElegantOTA.begin(&server);
   server.begin();
   Serial.println("HTTP server started");
 }
@@ -122,9 +124,10 @@ void loop() {
   unsigned long currentTime = millis();
 
   server.handleClient();
-
+  ElegantOTA.loop();
   if (currentTime - lastUpdateTime >= 1000) {
     updateSensorData();
+  
     lastUpdateTime = currentTime;
   }
 }
