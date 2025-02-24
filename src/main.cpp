@@ -1,85 +1,132 @@
-#if defined(ESP8266)
-  #include <ESP8266WiFi.h>
-  #include <WiFiClient.h>
-  #include <ESP8266WebServer.h>
-#elif defined(ESP32)
-  #include <WiFi.h>
-  #include <WiFiClient.h>
-  #include <WebServer.h>
-#endif
-#include <ElegantOTA.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <LittleFS.h>
+#include <Wire.h>
+#include <ArduinoJson.h>
 #include "DFRobot_RainfallSensor.h"
 
+// Konfigurasi WiFi
 const char* ssid = "server";
 const char* password = "jeris6467";
- 
-#if defined(ESP8266)
-  ESP8266WebServer server(80);
-#elif defined(ESP32)
-  WebServer server(80);
-#endif
 
+// Buat objek WebServer di port 80
+WebServer server(80);
+
+// Inisialisasi sensor curah hujan (DFRobot_RainfallSensor)
+// Pastikan sensor tersambung melalui I2C (SDA dan SCL ESP32 default: GPIO21 dan GPIO22)
 DFRobot_RainfallSensor_I2C Sensor(&Wire);
 
+// Variabel global untuk data sensor
+float sensorWorkingTime = 0;
+float totalRainfall = 0;
+float oneHourRainfall = 0;
+int rawData = 0;
+void updateSensorData() {
+  // Update data sensor curah hujan setiap detik
+  sensorWorkingTime = Sensor.getSensorWorkingTime();
+  totalRainfall = Sensor.getRainfall();            // Total curah hujan (mm)
+  oneHourRainfall = Sensor.getRainfall(1);           // Curah hujan selama 1 jam (mm)
+  rawData = Sensor.getRawData();                     // Jumlah tipping bucket
+
+  // Tampilkan data ke Serial Monitor untuk debugging
+  Serial.print("Sensor WorkingTime: ");
+  Serial.print(sensorWorkingTime);
+  Serial.println(" H");
+  Serial.print("Total Rainfall: ");
+  Serial.print(totalRainfall);
+  Serial.println(" mm");
+  Serial.print("1 Hour Rainfall: ");
+  Serial.print(oneHourRainfall);
+  Serial.println(" mm");
+  Serial.print("Raw Data: ");
+  Serial.println(rawData);
+}
+
+//
+// Handler untuk menyajikan file index.html dari LittleFS
+//
+void handleRoot() {
+  File file = LittleFS.open("/index.html", "r");
+  if (!file) {
+    server.send(500, "text/plain", "Index file not found");
+    return;
+  }
+  server.streamFile(file, "text/html");
+  file.close();
+}
+
+//
+// Handler untuk menyajikan data sensor dalam format JSON
+//
+void handleData() {
+  JsonDocument doc;
+  doc["workingTime"] = sensorWorkingTime;
+  doc["totalRainfall"] = totalRainfall;
+  doc["oneHourRainfall"] = oneHourRainfall;
+  doc["rawData"] = rawData;
+
+  String jsonStr;
+  serializeJson(doc, jsonStr);
+  server.send(200, "application/json", jsonStr);
+}
 void setup() {
   Serial.begin(115200);
-
   delay(1000);
-  while(!Sensor.begin()) {
-    Serial.println("Sensor init err!!!");
-    delay(1000);
+
+  // Inisialisasi LittleFS
+  if (!LittleFS.begin(true)) {  // Format otomatis jika mount gagal
+    Serial.println("LittleFS mount failed");
+    while (1);
   }
-  Serial.print("vid:\t");
-  Serial.println(Sensor.vid,HEX);
-  Serial.print("pid:\t");
-  Serial.println(Sensor.pid,HEX);
-  Serial.print("Version:\t");
-  Serial.println(Sensor.getFirmwareVersion());
-  //Set the rain accumulated value, unit: mm
-  Sensor.setRainAccumulatedValue(0.2794);
-    WiFi.mode(WIFI_STA);
+  Serial.println("LittleFS mounted successfully");
+
+  // Inisialisasi WiFi dalam mode STA
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  Serial.println("");
- 
-  // Wait for connection
+  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
+  Serial.println();
+  Serial.print("Connected, IP: ");
   Serial.println(WiFi.localIP());
- 
-  server.on("/", []() {
-    server.send(200, "text/plain", "Rainfall Sensor Demo");
-  });
- 
-  ElegantOTA.begin(&server);    // Start ElegantOTA
+
+  // Inisialisasi I2C (gunakan Wire default pada ESP32: SDA=21, SCL=22)
+  Wire.begin();
+
+  // Inisialisasi sensor curah hujan
+  while (!Sensor.begin()) {
+    Serial.println("Sensor init err!!!");
+    delay(1000);
+  }
+  Serial.print("vid: ");
+  Serial.println(Sensor.vid, HEX);
+  Serial.print("pid: ");
+  Serial.println(Sensor.pid, HEX);
+  Serial.print("Firmware Version: ");
+  Serial.println(Sensor.getFirmwareVersion());
+  
+  // Set nilai awal curah hujan (unit: mm)
+  Sensor.setRainAccumulatedValue(0.2794);
+
+  // Konfigurasi endpoint web server
+  server.on("/", handleRoot);
+  server.on("/data", handleData);
   server.begin();
   Serial.println("HTTP server started");
 }
 
 void loop() {
-  static unsigned long lastMillis = 0;
-  if (millis() - lastMillis >= 1000) {
-    lastMillis = millis();
-    //Get the sensor working time, unit: hour
-    Serial.print("Sensor WorkingTime:\t");
-    Serial.print(Sensor.getSensorWorkingTime());
-    Serial.println(" H");
-    //Get the accumulated rainfall during the sensor working time
-    Serial.print("Rainfall:\t");
-    Serial.println(Sensor.getRainfall());
-    //Get the accumulated rainfall within 1 hour of the system (function parameter optional 1-24)
-    Serial.print("1 Hour Rainfall:\t");
-    Serial.print(Sensor.getRainfall(1));
-    Serial.println(" mm");
-    //Get the raw data, the number of tipping buckets for rainfall, unit: times
-    Serial.print("rainfall raw:\t");
-    Serial.println(Sensor.getRawData());
-  }
+  static unsigned long lastUpdateTime = 0;
+  unsigned long currentTime = millis();
+
   server.handleClient();
-  ElegantOTA.loop();
+
+  if (currentTime - lastUpdateTime >= 1000) {
+    updateSensorData();
+    lastUpdateTime = currentTime;
+  }
 }
+
+

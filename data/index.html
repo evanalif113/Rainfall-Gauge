@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring Curah Hujan</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    #data {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .value {
+      font-weight: bold;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Monitoring Curah Hujan</h1>
+  <div id="data">
+    <p>Waktu Sensor: <span id="workingTime" class="value">-</span> H</p>
+    <p>Total Curah Hujan: <span id="rainfall" class="value">-</span> mm</p>
+    <p>Curah Hujan 1 Jam: <span id="oneHourRainfall" class="value">-</span> mm</p>
+    <p>Raw Data: <span id="rawData" class="value">-</span></p>
+  </div>
+
+  <script>
+    function fetchData() {
+      fetch('/data')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('workingTime').innerText = data.workingTime;
+          document.getElementById('rainfall').innerText = data.rainfall;
+          document.getElementById('oneHourRainfall').innerText = data.oneHourRainfall;
+          document.getElementById('rawData').innerText = data.rawData;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+    
+    // Ambil data setiap 5 detik
+    setInterval(fetchData, 5000);
+    fetchData();
+  </script>
+</body>
+</html>
