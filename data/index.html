@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AWS Digi Yogyakarta</title>
+  <title>AWS Jerukagung Meteorologi</title>
   <style>
     /* Reset margin dan padding */
     * {
@@ -85,7 +85,7 @@
 </head>
 <body>
   <header>
-    <h1>BADAN METEOROLOGI KLIMATOLOGI DAN GEOFISIKA</h1>
+    <h1>Depertamen Sains Atmosfer Jerukagung Seismologi</h1>
     <h2>Automatic Weather Station - System Online</h2>
   </header>
 
@@ -128,11 +128,11 @@
       fetch('/data')
         .then(response => response.json())
         .then(data => {
-          // Update card data
-          document.getElementById('workingTime').textContent = data.workingTime.toFixed(2);
-          document.getElementById('totalRainfall').textContent = data.rainfall.toFixed(2);
-          document.getElementById('oneHourRainfall').textContent = data.oneHourRainfall.toFixed(2);
-          document.getElementById('rawData').textContent = data.rawData;
+          // Update card data with checks for undefined properties
+          document.getElementById('workingTime').textContent = data.workingTime !== undefined ? data.workingTime.toFixed(2) : '--';
+          document.getElementById('totalRainfall').textContent = data.rainfall !== undefined ? data.rainfall.toFixed(2) : '--';
+          document.getElementById('oneHourRainfall').textContent = data.oneHourRainfall !== undefined ? data.oneHourRainfall.toFixed(2) : '--';
+          document.getElementById('rawData').textContent = data.rawData !== undefined ? data.rawData : '--';
 
           // Perbarui waktu update
           const now = new Date();
