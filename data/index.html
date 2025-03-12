@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sistem Informasi Sensor Cuaca</title>
+  <title>AWS Digi Yogyakarta</title>
   <style>
     /* Reset margin dan padding */
     * {
@@ -85,8 +85,8 @@
 </head>
 <body>
   <header>
-    <h1>MONITORING CUACA</h1>
-    <h2>Automatic Weather Station</h2>
+    <h1>BADAN METEOROLOGI KLIMATOLOGI DAN GEOFISIKA</h1>
+    <h2>Automatic Weather Station - System Online</h2>
   </header>
 
   <!-- Waktu UTC di pojok kanan -->
@@ -103,7 +103,7 @@
 
     <div class="card">
       <h3>Total Rainfall</h3>
-      <div class="value" id="rainfall">--</div>
+      <div class="value" id="totalRainfall">--</div>
       <small>mm</small>
     </div>
 
@@ -130,7 +130,7 @@
         .then(data => {
           // Update card data
           document.getElementById('workingTime').textContent = data.workingTime.toFixed(2);
-          document.getElementById('rainfall').textContent = data.rainfall.toFixed(2);
+          document.getElementById('totalRainfall').textContent = data.rainfall.toFixed(2);
           document.getElementById('oneHourRainfall').textContent = data.oneHourRainfall.toFixed(2);
           document.getElementById('rawData').textContent = data.rawData;
 
