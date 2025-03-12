@@ -1,58 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Monitoring Curah Hujan</title>
+  <title>AWS Digi Yogyakarta</title>
   <style>
+    /* Reset margin dan padding */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background-color: #f7f7f7;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
+      background-color: #f0f0f0;
       color: #333;
+      padding: 20px;
     }
-    #data {
-      margin-top: 20px;
-      padding: 10px;
+
+    /* Header besar */
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    header h2 {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    /* Bagian jam UTC di pojok kanan atas */
+    .datetime {
+      text-align: right;
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    /* Kontainer grid untuk kartu data */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin: 0 auto;
+      max-width: 800px;
+    }
+
+    /* Tiap kartu data */
+    .card {
       background-color: #fff;
       border-radius: 8px;
-      display: inline-block;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 15px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      text-align: center;
     }
-    .value {
+
+    .card h3 {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .card .value {
+      font-size: 1.4rem;
       font-weight: bold;
-      color: #e74c3c;
+      color: #2c3e50;
+    }
+
+    /* Footer info */
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: #999;
     }
   </style>
 </head>
 <body>
-  <h1>Monitoring Curah Hujan</h1>
-  <div id="data">
-    <p>Waktu Sensor: <span id="workingTime" class="value">-</span> Minute</p>
-    <p>Total Curah Hujan: <span id="rainfall" class="value">-</span> mm</p>
-    <p>Curah Hujan 1 Jam: <span id="oneHourRainfall" class="value">-</span> mm</p>
-    <p>Raw Data: <span id="rawData" class="value">-</span></p>
+  <header>
+    <h1>MONITORING CUACA</h1>
+    <h2>Automatic Weather Station</h2>
+  </header>
+
+  <!-- Waktu UTC di pojok kanan -->
+  <div class="datetime" id="datetime">--:--:-- (UTC)</div>
+
+  <!-- Grid container untuk data -->
+  <div class="grid-container">
+    <!-- Contoh 4 kartu, silakan tambah/kurangi sesuai kebutuhan -->
+    <div class="card">
+      <h3>Working Time</h3>
+      <div class="value" id="workingTime">--</div>
+      <small>Minute</small>
+    </div>
+
+    <div class="card">
+      <h3>Total Rainfall</h3>
+      <div class="value" id="rainfall">--</div>
+      <small>mm</small>
+    </div>
+
+    <div class="card">
+      <h3>1 Hour Rainfall</h3>
+      <div class="value" id="oneHourRainfall">--</div>
+      <small>mm</small>
+    </div>
+
+    <div class="card">
+      <h3>Raw Data</h3>
+      <div class="value" id="rawData">--</div>
+      <small>times</small>
+    </div>
   </div>
 
+  <footer id="lastUpdate">Last Update: --/--/---- --:--:-- (UTC)</footer>
+
   <script>
+    // Fungsi untuk mengambil data sensor dari /data
     function fetchData() {
       fetch('/data')
         .then(response => response.json())
         .then(data => {
-          document.getElementById('workingTime').innerText = data.workingTime;
-          document.getElementById('rainfall').innerText = data.rainfall;
-          document.getElementById('oneHourRainfall').innerText = data.oneHourRainfall;
-          document.getElementById('rawData').innerText = data.rawData;
+          // Update card data
+          document.getElementById('workingTime').textContent = data.workingTime.toFixed(2);
+          document.getElementById('rainfall').textContent = data.rainfall.toFixed(2);
+          document.getElementById('oneHourRainfall').textContent = data.oneHourRainfall.toFixed(2);
+          document.getElementById('rawData').textContent = data.rawData;
+
+          // Perbarui waktu update
+          const now = new Date();
+          document.getElementById('lastUpdate').textContent = 
+            "Last Update: " + now.toUTCString();
         })
         .catch(error => console.error('Error fetching data:', error));
     }
-    
+
+    // Fungsi untuk menampilkan waktu UTC di pojok kanan
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById('datetime').textContent = now.toUTCString();
+    }
+
+    // Ambil data pertama kali
+    fetchData();
+    updateDateTime();
+
     // Ambil data setiap 5 detik
     setInterval(fetchData, 5000);
-    fetchData();
+    // Update jam di pojok setiap detik
+    setInterval(updateDateTime, 1000);
   </script>
 </body>
 </html>
