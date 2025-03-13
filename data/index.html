@@ -25,13 +25,13 @@
     }
 
     header h1 {
-      font-size: 1.8rem;
+      font-size: 2.2rem; /* Increased font size */
       font-weight: bold;
       margin-bottom: 5px;
     }
 
     header h2 {
-      font-size: 1rem;
+      font-size: 1.2rem; /* Increased font size */
       color: #666;
       margin-bottom: 5px;
     }
@@ -39,7 +39,7 @@
     /* Bagian jam UTC di pojok kanan atas */
     .datetime {
       text-align: right;
-      font-size: 0.9rem;
+      font-size: 1.1rem; /* Increased font size */
       color: #666;
       margin-bottom: 20px;
     }
@@ -47,29 +47,29 @@
     /* Kontainer grid untuk kartu data */
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(4, 1fr); /* 4 columns */
+      gap: 20px; /* Increased gap */
       margin: 0 auto;
-      max-width: 800px;
+      max-width: 1000px; /* Increased max width */
     }
 
     /* Tiap kartu data */
     .card {
       background-color: #fff;
       border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 20px; /* Increased padding */
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Increased shadow */
       text-align: center;
     }
 
     .card h3 {
-      font-size: 0.9rem;
+      font-size: 1.2rem; /* Increased font size */
       color: #888;
-      margin-bottom: 5px;
+      margin-bottom: 10px; /* Increased margin */
     }
 
     .card .value {
-      font-size: 1.4rem;
+      font-size: 1.8rem; /* Increased font size */
       font-weight: bold;
       color: #2c3e50;
     }
@@ -78,8 +78,13 @@
     footer {
       text-align: center;
       margin-top: 20px;
-      font-size: 0.85rem;
+      font-size: 1rem; /* Increased font size */
       color: #999;
+    }
+
+    /* Gap between grid containers */
+    .grid-container + .grid-container {
+      margin-top: 20px; /* Add gap between grid containers */
     }
   </style>
 </head>
@@ -120,6 +125,43 @@
     </div>
   </div>
 
+  <!-- Grid container tambahan untuk data -->
+  <div class="grid-container">
+    <!-- Contoh 4 kartu, silakan tambah/kurangi sesuai kebutuhan -->
+    <div class="card">
+      <h3>Temperature</h3>
+      <div class="value" id="temperature">--</div>
+      <small>°C</small>
+    </div>
+
+    <div class="card">
+      <h3>Humidity</h3>
+      <div class="value" id="humidity">--</div>
+      <small>Rh%</small>
+    </div>
+
+    <div class="card">
+      <h3>Pressure</h3>
+      <div class="value" id="pressure">--</div>
+      <small>hPa</small>
+    </div>
+
+    <div class="card">
+      <h3>Dew Point</h3>
+      <div class="value" id="dewPoint">--</div>
+      <small>°C</small>
+    </div>
+  </div>
+  <!-- Grid container tambahan untuk data -->
+  <div class="grid-container">
+    <!-- Contoh 4 kartu, silakan tambah/kurangi sesuai kebutuhan -->
+    <div class="card">
+      <h3>Voltage</h3>
+      <div class="value" id="voltage">--</div>
+      <small>Volt</small>
+    </div>
+  </div>
+
   <footer id="lastUpdate">Last Update: --/--/---- --:--:-- (UTC)</footer>
 
   <script>
@@ -130,9 +172,14 @@
         .then(data => {
           // Update card data with checks for undefined properties
           document.getElementById('workingTime').textContent = data.workingTime !== undefined ? data.workingTime.toFixed(2) : '--';
-          document.getElementById('totalRainfall').textContent = data.rainfall !== undefined ? data.rainfall.toFixed(2) : '--';
-          document.getElementById('oneHourRainfall').textContent = data.oneHourRainfall !== undefined ? data.oneHourRainfall.toFixed(2) : '--';
+          document.getElementById('totalRainfall').textContent = data.totalRainfall !== undefined ? data.totalRainfall.toFixed(2) : '--';
+          document.getElementById('oneHourRainfall').textContent = data.HourRainfall !== undefined ? data.HourRainfall.toFixed(2) : '--';
           document.getElementById('rawData').textContent = data.rawData !== undefined ? data.rawData : '--';
+          document.getElementById('temperature').textContent = data.temperature !== undefined ? data.temperature.toFixed(2) : '--';
+          document.getElementById('humidity').textContent = data.humidity !== undefined ? data.humidity.toFixed(2) : '--';
+          document.getElementById('pressure').textContent = data.pressure !== undefined ? data.pressure.toFixed(2) : '--';
+          document.getElementById('dewPoint').textContent = data.dewPoint !== undefined ? data.dewPoint.toFixed(2) : '--';
+          document.getElementById('voltage').textContent = data.voltage !== undefined ? data.voltage.toFixed(2) : '--';
 
           // Perbarui waktu update
           const now = new Date();

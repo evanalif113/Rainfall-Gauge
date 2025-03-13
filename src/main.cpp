@@ -2,9 +2,13 @@
 #include <WebServer.h>
 #include <LittleFS.h>
 #include <Wire.h>
+#include <Adafruit_SHT4x.h>
+#include <Adafruit_BMP280.h>
+#include <Adafruit_MAX1704X.h>
 #include <ElegantOTA.h>
 #include <ArduinoJson.h>
 #include "DFRobot_RainfallSensor.h"
+
 
 // Konfigurasi WiFi
 const char* ssid = "server";
@@ -20,16 +24,52 @@ DFRobot_RainfallSensor_I2C Sensor(&Wire);
 // Variabel global untuk data sensor
 float sensorWorkingTime = 0;
 float totalRainfall = 0;
-float oneHourRainfall = 0;
+float HourRainfall = 0;
+float temperature = 0;
+float humidity = 0;
+float pressure = 0;
+float dewPoint = 0;
+float voltage = 0;
 int rawData = 0;
+
+// Sensor SHT40, BMP280, MAX17048
+Adafruit_SHT4x sht4;
+Adafruit_BMP280 bmp;
+Adafruit_MAX17048 maxWin;
+
+// Fungsi untuk menghitung titik embun (dew point)
+float calculateDewPoint(float temperature, float humidity) {
+  const float a = 17.27;
+  const float b = 237.7;
+  float alpha = ((a * temperature) / (b + temperature)) + log(humidity / 100.0);
+  return (b * alpha) / (a - alpha);
+}
+
 void updateSensorData() {
   // Update data sensor curah hujan setiap detik
   sensorWorkingTime = Sensor.getSensorWorkingTime() * 60;
   totalRainfall = Sensor.getRainfall();            // Total curah hujan (mm)
-  oneHourRainfall = Sensor.getRainfall(1);           // Curah hujan selama 1 jam (mm)
+  HourRainfall = Sensor.getRainfall(1);           // Curah hujan selama 1 jam (mm)
   rawData = Sensor.getRawData();                     // Jumlah tipping bucket
-
+  sensors_event_t humidityEvent, tempEvent;
+  sht4.getEvent(&humidityEvent, &tempEvent);
+  temperature = tempEvent.temperature;
+  humidity = humidityEvent.relative_humidity;
+  pressure = bmp.readPressure() / 100.0F;
+  voltage = maxWin.cellVoltage();
+  dewPoint = calculateDewPoint(temperature, humidity);
   // Tampilkan data ke Serial Monitor untuk debugging
+    // Cetak data ke serial
+  Serial.print("Temperature: ");
+  Serial.println(temperature);
+  Serial.print("Humidity: ");
+  Serial.println(humidity);
+  Serial.print("Dew Point: ");
+  Serial.println(dewPoint);
+  Serial.print("Pressure: ");
+  Serial.println(pressure);
+  Serial.print("Voltage: ");
+  Serial.println(voltage);
   Serial.print("Sensor WorkingTime: ");
   Serial.print(sensorWorkingTime);
   Serial.println(" Minute");
@@ -37,10 +77,46 @@ void updateSensorData() {
   Serial.print(totalRainfall);
   Serial.println(" mm");
   Serial.print("1 Hour Rainfall: ");
-  Serial.print(oneHourRainfall);
+  Serial.print(HourRainfall);
   Serial.println(" mm");
   Serial.print("Raw Data: ");
   Serial.println(rawData);
+}
+
+// Fungsi untuk inisialisasi sensor
+void initSensors() {
+  // Inisialisasi SHT40
+  if (!sht4.begin()) {
+    Serial.println("Couldn't find SHT40 sensor! Check wiring.");
+    while (1);
+  }
+  Serial.println("Found SHT40 sensor!");
+
+  // Inisialisasi BMP280
+  if (!bmp.begin(0x76)) {
+    Serial.println("Couldn't find BMP280 sensor! Check wiring.");
+    while (1);
+  }
+  Serial.println("Found BMP280 sensor!");
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL, 
+                  Adafruit_BMP280::SAMPLING_X2, 
+                  Adafruit_BMP280::SAMPLING_X16, 
+                  Adafruit_BMP280::FILTER_X16, 
+                  Adafruit_BMP280::STANDBY_MS_500);
+
+  // Inisialisasi MAX17048
+  if (!maxWin.begin()) {
+    Serial.println("Couldn't find MAX17048 sensor! Check wiring.");
+    while (1);
+  }
+  Serial.println("Found MAX17048 sensor!");
+    // Inisialisasi sensor curah hujan
+    while (!Sensor.begin()) {
+      Serial.println("Sensor init err!!!");
+      delay(1000);
+    }
+    // Set nilai awal curah hujan (unit: mm)
+    Sensor.setRainAccumulatedValue(0.2794);
 }
 
 //
@@ -63,8 +139,13 @@ void handleData() {
   JsonDocument doc;
   doc["workingTime"] = sensorWorkingTime;
   doc["totalRainfall"] = totalRainfall;
-  doc["oneHourRainfall"] = oneHourRainfall;
+  doc["HourRainfall"] = HourRainfall;
   doc["rawData"] = rawData;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  doc["pressure"] = pressure;
+  doc["dewPoint"] = dewPoint;
+  doc["voltage"] = voltage;
 
   String jsonStr;
   serializeJson(doc, jsonStr);
@@ -72,7 +153,6 @@ void handleData() {
 }
 void setup() {
   Serial.begin(115200);
-  delay(1000);
 
   // Inisialisasi LittleFS
   if (!LittleFS.begin(true)) {  // Format otomatis jika mount gagal
@@ -95,21 +175,8 @@ void setup() {
 
   // Inisialisasi I2C (gunakan Wire default pada ESP32: SDA=21, SCL=22)
   Wire.begin();
+  initSensors();
 
-  // Inisialisasi sensor curah hujan
-  while (!Sensor.begin()) {
-    Serial.println("Sensor init err!!!");
-    delay(1000);
-  }
-  Serial.print("vid: ");
-  Serial.println(Sensor.vid, HEX);
-  Serial.print("pid: ");
-  Serial.println(Sensor.pid, HEX);
-  Serial.print("Firmware Version: ");
-  Serial.println(Sensor.getFirmwareVersion());
-  
-  // Set nilai awal curah hujan (unit: mm)
-  Sensor.setRainAccumulatedValue(0.2794);
 
   // Konfigurasi endpoint web server
   server.on("/", handleRoot);
@@ -125,7 +192,7 @@ void loop() {
 
   server.handleClient();
   ElegantOTA.loop();
-  if (currentTime - lastUpdateTime >= 1000) {
+  if (currentTime - lastUpdateTime >= 5000) {
     updateSensorData();
   
     lastUpdateTime = currentTime;
