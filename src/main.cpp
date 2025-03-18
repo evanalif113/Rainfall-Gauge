@@ -151,6 +151,7 @@ void handleData() {
   serializeJson(doc, jsonStr);
   server.send(200, "application/json", jsonStr);
 }
+
 void setup() {
   Serial.begin(115200);
 
