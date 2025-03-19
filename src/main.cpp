@@ -49,7 +49,7 @@ float calculateDewPoint(float temperature, float humidity) {
 void updateSensorData() {
   // Update data sensor curah hujan setiap detik
   sensorWorkingTime = Sensor.getSensorWorkingTime() * 60;
-  totalRainfall = Sensor.getRainfall();            // Total curah hujan (mm)
+  totalRainfall = Sensor.getRainfall(24);            // Total curah hujan (mm)
   HourRainfall = Sensor.getRainfall(1);           // Curah hujan selama 1 jam (mm)
   rawData = Sensor.getRawData();                     // Jumlah tipping bucket
   sensors_event_t humidityEvent, tempEvent;
@@ -112,12 +112,12 @@ void initSensors() {
   }
   Serial.println("Found MAX17048 sensor!");
     // Inisialisasi sensor curah hujan
-    while (!Sensor.begin()) {
-      Serial.println("Sensor init err!!!");
-      delay(1000);
+  while (!Sensor.begin()) {
+    Serial.println("Sensor init err!!!");
+    delay(1000);
     }
-    // Set nilai awal curah hujan (unit: mm)
-    Sensor.setRainAccumulatedValue(0.2794);
+  // Set nilai awal curah hujan (unit: mm)
+  Sensor.setRainAccumulatedValue(0.2794);
 }
 
 //
