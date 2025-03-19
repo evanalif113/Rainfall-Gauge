@@ -22,14 +22,15 @@ WebServer server(80);
 DFRobot_RainfallSensor_I2C Sensor(&Wire);
 
 // Variabel global untuk data sensor
-float sensorWorkingTime = 0;
-float totalRainfall = 0;
-float HourRainfall = 0;
-float temperature = 0;
-float humidity = 0;
-float pressure = 0;
-float dewPoint = 0;
-float voltage = 0;
+float sensorWorkingTime = 0,
+      totalRainfall = 0,
+      HourRainfall = 0,
+      temperature = 0,
+      humidity = 0,
+      pressure = 0,
+      dewPoint = 0,
+      voltage = 0;
+// Variabel tiping bucket
 int rawData = 0;
 
 // Sensor SHT40, BMP280, MAX17048
